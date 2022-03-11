@@ -7,6 +7,16 @@ import WeatherListItem from "./src/components/WeatherListItem"
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
 
+function OptionItem({item, handleOptionSelected}) {
+  const DATE = new Date(item.dt * 1000);
+  return (
+      <ListItem containerStyle={{backgroundColor: "#1e1e1e", marginTop: 15}} onPress={() => handleOptionSelected(item)} bottomDivider >
+        <Text style={{color: "#ffffff"}}>{`${item.country}, ${item.state}, ${item.city_name}.`}</Text>
+      </ListItem>
+  )
+}
+
+
 export default function App() {
 
   const OPEN_WEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/onecall";
@@ -17,9 +27,46 @@ export default function App() {
   const [direction, setDirection] = useState("")
   const [dailyWeather, setDailyWeather] = useState([])
   const [current, setCurrent] = useState(null)
+  const [options, setOptions] = useState([])
+  const [maxHumidity, setMaxHumidity] = useState("")
 
-  const updateSearch = (search) => {
+  const handleOptionSelected = async (item) => {
+    const weather = await axios.get(OPEN_WEATHER_BASE_URL, {
+      params: {
+        lat: item.lat,
+        lon: item.long,
+        exclude: "hourly,minutely",
+        units: "metric",
+        appid: API_KEY
+      }
+    })
+
+    
+
+    let maxHDt = ""
+    let humidity = 0
+    weather.data.daily.map(day => {
+      console.log(day.humidity)
+      if(humidity < day.humidity){
+        humidity = day.humidity
+        maxHDt = day.dt
+      }
+    })
+
+    setDirection(`${item.country}, ${item.state}, ${item.city_name}.`)
+    setDailyWeather(weather.data.daily)
+    setMaxHumidity(maxHDt)
+    setCurrent(weather.data.current)
+  }
+
+  const updateSearch = async (search) => {
+    const coords = await axios.get(RESERVEMOS_BASE_URL, {
+      params: {
+        q: query
+      }
+    })
     setQuery(search);
+    setOptions(coords.data)
   }
 
   const handleSearch = async() => {
@@ -42,6 +89,16 @@ export default function App() {
               appid: API_KEY
             }
           })
+          let maxHDt = ""
+          let humidity = 0
+          weather.data.daily.map(day => {
+            console.log(day.humidity)
+            if(humidity < day.humidity){
+              humidity = day.humidity
+              maxHDt = day.dt
+            }
+          })
+          setMaxHumidity(maxHDt)
           setDirection(`${coords.data[0].country}, ${coords.data[0].state}, ${coords.data[0].city_name}.`)
           setDailyWeather(weather.data.daily)
           setCurrent(weather.data.current)
@@ -75,6 +132,15 @@ export default function App() {
         onSubmitEditing={handleSearch}
         value={query}
       />
+      <ScrollView>
+        {
+          options.map((option, index) => {
+            return (
+              <OptionItem key={index.toString()} item={option} handleOptionSelected={handleOptionSelected}/>
+            )
+          })
+        }
+      </ScrollView>
       <FlatList
         ListHeaderComponent={
           <>
@@ -123,7 +189,7 @@ export default function App() {
         }
         keyExtractor={keyExtractor}
         data={dailyWeather}
-        renderItem={WeatherListItem}
+        renderItem={({item})=> <WeatherListItem item={item} maxHumidity={maxHumidity}/>}
       />
     </View>
   );

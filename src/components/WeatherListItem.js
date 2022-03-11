@@ -4,10 +4,12 @@ import { ListItem, Text } from 'react-native-elements';
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'June', 'July', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec']
 
-export default function WeatherListItem({item}) {
+export default function WeatherListItem({item, maxHumidity}) {
     const DATE = new Date(item.dt * 1000);
+    console.log(maxHumidity, item.dt)
+    const backgroundColor = maxHumidity===item.dt ? "#ff0000":"#1e1e1e"
     return (
-        <ListItem containerStyle={{backgroundColor: "#1e1e1e", marginTop: 15}} bottomDivider >
+        <ListItem containerStyle={{backgroundColor: backgroundColor, marginTop: 15}} bottomDivider >
             <View style={{flexDirection: "column"}}>
                 <View style={{width: "100%", textAlign: 'center'}}>
                     <Text
